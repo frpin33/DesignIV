@@ -74,7 +74,13 @@ def getTableNTime():
     tableParam = []
     tableHoraire = []
 
-    cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+    while(1) :
+        try:
+            cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+            break
+        except:
+            time.sleep(5)
+    
     cursor = cnx.cursor()
     
     cursor.execute(cmdGetParam)
@@ -82,6 +88,7 @@ def getTableNTime():
 
     cursor.execute(cmdHoraire)
     tableHoraire = cursor.fetchall()
+    
     cnx.close()
 
     if tableParam :
@@ -94,35 +101,48 @@ def getSignalData(centerFreq, site, strCurrentTime, pathPanda, show=False, save=
 
     #pathEye = pathPanda + str(site) + "_eye_current"
     #pathConst = pathPanda + str(site) + "_const_current" 
+    #pathFFT = pathPanda + str(site) + "_fft_current"
 
     pathEye = pathPanda + str(site) + "_eye_" + strCurrentTime.replace(":","")
     pathConst = pathPanda + str(site) + "_const_" + strCurrentTime.replace(":","")
+    pathFFT = pathPanda + str(site) + "_fft_" + strCurrentTime.replace(":","")
 
     power = cl.computeRFpower(centerFreq, -40, 30, 12500)
-    print(power)
+    cl.plotfft(float(centerFreq), -70, 30, 250000, pathFFT)
     cl.generateGraphs(centerFreq, show=show, save=save, level = power+5, eyeName=pathEye, constName=pathConst)
     
     return power
     
-def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writeConst=True):    
+def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writeConst=True, writeFFT=True):    
     
     #pathPandaEye = pathPanda + str(site) + "_eye_current.png"
     #pathPandaConst = pathPanda + str(site) + "_const_current.png" 
+    #pathFFT = pathPanda + str(site) + "_fft_current.png"
     
     pathPandaEye = pathPanda + str(site) + "_eye_" + strCurrentTime.replace(":","") + ".png"
     pathPandaConst = pathPanda + str(site) + "_const_" + strCurrentTime.replace(":","") + ".png"
+    pathPandaFFT = pathPanda + str(site) + "_fft_" + strCurrentTime.replace(":","") + ".png"
     
     pathVmEye = pathVm  + str(site) + "_eye_" + strCurrentTime + ".png"
     pathVmConst = pathVm + str(site) + "_const_" + strCurrentTime + ".png"
+    pathVmFFT = pathVm + str(site) + "_fft_" + strCurrentTime + ".png"
     
     cmdSTOREye = "STOR " + pathVmEye
     cmdModEye = "SITE CHMOD 755 " + pathVmEye
     cmdSTORConst = "STOR " + pathVmConst
     cmdModConst = "SITE CHMOD 755 " + pathVmConst
+    cmdSTORFFT = "STOR " + pathVmFFT
+    cmdModFFT =  "SITE CHMOD 755 " + pathVmFFT
     
     #try catch pour la connection ici
    
-    session = ftplib.FTP('51.79.55.231','ulaval','Equipe9!')
+    while(1) :
+        try:
+            session = ftplib.FTP('51.79.55.231','ulaval','Equipe9!')
+            break
+        except:
+            time.sleep(5)
+    
     
     if writeEye :
         file = open(pathPandaEye,'rb') 
@@ -136,6 +156,12 @@ def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writ
         file.close()    
         session.sendcmd(cmdModConst)
 
+    if writeFFT : 
+        file = open(pathPandaFFT,'rb') 
+        session.storbinary(cmdSTORFFT, file)
+        file.close()    
+        session.sendcmd(cmdModFFT)
+
     session.quit()
 
 
@@ -143,21 +169,27 @@ def readPictureFTP(strCurrentTime, site, pathVm) :
 
     pathVmEye= pathVm + str(site) + "_eye_" + strCurrentTime + ".png"
     pathVmConst = pathVm + str(site) + "_const_" + strCurrentTime + ".png"
+    pathVmFFT = pathVm + str(site) + "_fft_" + strCurrentTime + ".png"
     
-    session = ftplib.FTP('51.79.55.231','ulaval','Equipe9!')
+    while(1) :
+        try:
+            session = ftplib.FTP('51.79.55.231','ulaval','Equipe9!')
+            break
+        except:
+            time.sleep(5)
+    
     currentDir = session.nlst(pathVm)    
     session.quit()
     
-    if pathVmConst in currentDir and pathVmEye in currentDir:
-        return 0
-    elif pathVmConst not in currentDir and pathVmEye not in currentDir:
-        return 1
-    elif pathVmConst in currentDir and pathVmEye not in currentDir: 
-        return 2
-    elif pathVmConst not in currentDir and pathVmEye in currentDir: 
-        return 3
-    else : 
-        return -1
+    tabWrite = [False, False, False]
+    if pathVmEye not in currentDir:
+        tabWrite[0] = True
+    if pathVmConst not in currentDir :
+        tabWrite[1] = True
+    if pathVmFFT not in currentDir: 
+        tabWrite[2] = True
+    
+    return tabWrite
 
 
 def writeDataBase(strCurrentTime, site, puissance, repeteur, writePic=True, writePower=True):
@@ -178,8 +210,14 @@ def writeDataBase(strCurrentTime, site, puissance, repeteur, writePic=True, writ
  VALUES('%i','%i','%i','%s','%f')\
  " %(numSys, int(site), int(repeteur), strCurrentTime, float(puissance))
 
+    while(1) :
+        try:
+            cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+            break
+        except:
+            time.sleep(5)
     
-    cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+    
     cursor = cnx.cursor()
     
     if writePic :
@@ -205,7 +243,13 @@ def readDataBase(strCurrentTime, site):
     picSucces = [] 
     powerSucces = []
 
-    cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+    while(1) :
+        try:
+            cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+            break
+        except:
+            time.sleep(5)
+    
     cursor = cnx.cursor()
 
     cursor.execute(cmdSuccesPicture)
@@ -215,26 +259,24 @@ def readDataBase(strCurrentTime, site):
     powerSucces = cursor.fetchall()
     cnx.close()
 
-    if picSucces and powerSucces :
-        return 0
-    elif not picSucces and powerSucces :
-        return 1
-    elif picSucces and not powerSucces :
-        return 2
-    elif not picSucces and not powerSucces :
-        return 3
-    else :
-        return -1
+    tabWrite = [False, False]
 
-####Pour la démo
-#appels timer
+
+    if not picSucces :
+        tabWrite[0] = True
+
+    if not powerSucces :
+        tabWrite[1] = True
+
+    return tabWrite
+
 
 #####Autre
 #Gestion de l'heure sur le PC 
 #Commentaire et documentation
 
 def sendHoraire():
-    c = "INSERT INTO horaire_mesures (Numero_systeme, Timestamp) VALUES (1, '2019-11-27 17:52:00')" #, (1, '2019-11-25 22:45:00')"
+    c = "INSERT INTO horaire_mesures (Numero_systeme, Timestamp) VALUES (1, '2019-11-27 21:12:00')" #, (1, '2019-11-25 22:45:00')"
     cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
     cursor = cnx.cursor()
 
@@ -275,37 +317,17 @@ def mainEvent(firstInit):
         repeteur = int(obj[2])
         puissance = getSignalData(centerFreq, site, strCurrentTime, pathPanda)
 
-        ret = -1
-        while(ret != 0) : 
-            if ret == -1 :
-                writePictureFTP(strCurrentTime, site, pathVm, pathPanda)    
-            elif ret == 1 :
-                writePictureFTP(strCurrentTime, site, pathVm, pathPanda)
-            elif ret == 2 :
-                writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeConst=False)
-            elif ret == 3 :
-                writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=False)
-            else : 
-                break
-
+        ret = [True, True, True]
+        while(True in ret) : 
+            writePictureFTP(strCurrentTime, site, pathVm, pathPanda, ret[0], ret[1], ret[2])    
             ret = readPictureFTP(strCurrentTime, site, pathVm)
 
-        ret = -1
-        while(ret != 0) : 
-            if ret == -1 :
-                writeDataBase(strCurrentTime, site, puissance, repeteur)
-            elif ret == 1 :
-                writeDataBase(strCurrentTime, site, puissance, repeteur, writePower=False)
-            elif ret == 2 :
-                writeDataBase(strCurrentTime, site, puissance, repeteur, writePic=False)
-            elif ret == 3 :
-                writeDataBase(strCurrentTime, site, puissance, repeteur)
-            else :
-                break
+        ret = [True, True]
+        while(True in ret) : 
+            writeDataBase(strCurrentTime, site, puissance, repeteur, ret[0], ret[1])
             ret = readDataBase(strCurrentTime, site)
 
     print("My work is done")
-    return timers
 
 def testyTest(a):
     currentTime = datetime.datetime.now()
@@ -327,9 +349,9 @@ def testyTest(a):
 
 
 
-testyTest(False)
+#testyTest(False)
 #sendHoraire() 
-#mainEvent(False)
+mainEvent(False)
 
 
 

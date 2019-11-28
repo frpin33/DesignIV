@@ -464,6 +464,7 @@ def plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDevi
 	plt.plot([0, 2*symbolDt],[symbolsFreqDeviations[2], symbolsFreqDeviations[2]], '--g')
 	plt.plot([0, 2*symbolDt],[symbolsFreqDeviations[3], symbolsFreqDeviations[3]], '--g')
 	plt.grid()
+	plt.ylim(-5000,5000)
 	plt.minorticks_on()
 	plt.grid(which='major', linestyle='-', linewidth='0.5', color='black')
 	plt.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
@@ -518,33 +519,46 @@ def plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDevi
 	return None
 
 
-def plotfft(IQ, centerFreq, span, sampleFreq, show = False, save = False, filename = 'fft'):
-	timeStep = 1/sampleFreq
-	iq = IQ
-	# Create window
-	window = get_window("hamming", len(iq))
-	# Normalize window
-	window *= len(window) / sum(window)
-	# Window, FFT, normalize FFT output
-	#iq_data_FFT = np.fft.fftshift(numpy.fft.fft(iq * window) / len(window))
-	iq_data_FFT = numpy.fft.fft(iq * window) / len(window)
-	#iq_data_freq = np.linspace(centerFreq-span,centerFreq+span,len(iq_data_FFT))
-	iq_data_freq = np.fft.fftfreq(iq_data_FFT.size, d=timeStep)
-	# Convert to dBm
-	#plt.plot(iq_data_freq[10:len(iq_data_freq)-10]/1000, 10 * numpy.log10(iq_data_FFT[10:len(iq_data_freq)-10].real ** 2 + iq_data_FFT.imag[10:len(iq_data_freq)-10] ** 2))
-	plt.scatter(iq_data_freq/1000, 10 * numpy.log10(iq_data_FFT.real ** 2 + iq_data_FFT.imag ** 2), s=1, c='green')
-	plt.xlabel('Fréquence [kHz]')
-	plt.ylabel('Puissance [dbm]')
-	plt.title('Spectre du signal capté autour de la porteuse')
+def plotfft(centerFreq, level, nbOfFrames, bandWidith, filename):
+	handle = sa_open_device()["handle"]
+
+	sa_config_acquisition(handle, SA_MIN_MAX, SA_LIN_SCALE)
+	sa_config_center_span(handle, centerFreq, bandWidith)
+	sa_config_level(handle, level)
+	sa_config_sweep_coupling(handle, 1000, 1000, True)
+	sa_config_real_time(handle, 100, 30)
+
+
+
+	sa_initiate(handle, SA_REAL_TIME, 0)
+	query = sa_query_sweep_info(handle)
+	sweep_width = query["sweep_length"]
+	rt2 = np.zeros((sweep_width,nbOfFrames))
+	for i in range(nbOfFrames):
+		a = (sa_get_real_time_frame(handle))
+		rt2[:,i] = a["sweep"]
+
+
+	sa_abort(handle)
+	sa_close_device(handle)
+
+	dbmValues = []
+	for i in range(0,sweep_width):
+		value = np.mean(rt2[i,:])
+		dbmValues.append(value)
+
+	frequences = np.linspace(centerFreq - bandWidith, centerFreq + bandWidith, sweep_width)
+	plt.plot(frequences/10**6, dbmValues)
+	plt.title('Spectre autour de la porteuse')
+	plt.xlabel("fréquence [MHz]")
+	plt.ylabel("Puissance [dbm]")
 	plt.grid()
 	plt.minorticks_on()
 	plt.grid(which='major', linestyle='-', linewidth='0.5', color='black')
 	plt.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
-	if (save == True):
-		plt.savefig(filename + '.png')
-	if (show == True):
-		plt.show()
-	return None
+	plt.savefig(filename + '.png')
+
+	
 
 def acquire_iq(centerFreq, bandwidth, nbOfSamples, level, decimation, dt):
 	'''
@@ -648,10 +662,6 @@ def generateGraphs(centerFreq, symbolsFreqDeviations = [600, 1800, -600, -1800],
 	nbOfSamplesPerAcq = nbOfSymbolsPerAcquisition * symbolDt / dt
 	interpolatedSampleRate = sampleRate * interpolation
 	interpolatedDt = 1 / interpolatedSampleRate
-
-	fftnbOfSamples = 100000
-	IQ = acquire_iq(centerFreq, bandWidith, fftnbOfSamples, level, decimation, dt)
-	plotfft(IQ, centerFreq, 250000, sampleRate, show=True, save=False)
 
 	saveNow = False
 	for i in range(nbOfAcquisitions):
