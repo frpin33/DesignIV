@@ -33,8 +33,7 @@ import time
 centerFreq = 140.985 * 10 ** 6
 
 power = cl.computeRFpower(centerFreq, -40, 30, 12500)
-print(power)
-cl.generateGraphs(centerFreq, show = True, save = True, level = power+5)
+cl.generateGraphs(centerFreq, show = False, save = True, level = power+5, eyeName=eyeName, constName=constName)
 
 
 #cl.realTimeGraphs(centerFreq)

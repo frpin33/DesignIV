@@ -5,7 +5,8 @@ the results with matlab functions.
 '''
 
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib import pyplot as plt
 import scipy as sp
 from numpy import linalg as la
 from sadevice.sa_api import *
@@ -14,7 +15,7 @@ from scipy.signal import get_window
 import seaborn as sns; sns.set() # styling
 import commpy
 import time
-import matplotlib.animation as anim
+from matplotlib import animation as anim
 
 
 pi = np.pi
@@ -429,7 +430,7 @@ def plotDeviationFrequency(frequencyDeviation, t_freqDevAtDecisionTime, finalFre
 		plt.show()
 	return None
 
-def plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDeviations, symbolDt, dt, show = False, save = False, clear = False, filename = 'eyeDiagram', nbOfWindow = 2000):
+def plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDeviations, symbolDt, dt, nbIteration, show = False, save = False, clear = False, filename = 'eyeDiagram', nbOfWindow = 2000):
 	'''
 	Show or save the deviation frequency plot.
 	
@@ -453,6 +454,8 @@ def plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDevi
 	plt.figure(5)
 	if (clear == True):
 		plt.clf()
+	if nbIteration == 0 :
+		plt.clf()
 	for i in range(0,nbOfWindow):
 		plt.plot(t_fd[0:int(finalDecisionIndexVector[i+2]-finalDecisionIndexVector[i])], frequencyDeviation[int(finalDecisionIndexVector[i]):int(finalDecisionIndexVector[i+2])], 'b-', linewidth=0.5)
 	plt.plot([t_fd[int(symbolDt/dt)],t_fd[int(symbolDt/dt)]], [-4000,4000], '--r')
@@ -473,7 +476,7 @@ def plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDevi
 		plt.show()
 	return None
 
-def plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDeviations, show = False, save = False, clear = False, filename = 'constellationDiagram'):
+def plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDeviations, nbIteration, show = False, save = False, clear = False, filename = 'constellationDiagram'):
 	'''
 	Show or save the deviation frequency plot.
 	
@@ -492,6 +495,8 @@ def plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDevi
 	plt.figure(6)
 	if (clear == True):
 		plt.clf()
+	if nbIteration == 0 :
+		plt.clf()
 	plt.title('Diagramme de constellation linéaire')
 	plt.xlabel("Déviation de fréquence à l'instant de décision [Hz]")
 	plt.grid()
@@ -506,6 +511,35 @@ def plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDevi
 	plt.plot([symbolsFreqDeviations[3], symbolsFreqDeviations[3]],[-1, 1], '--g')
 	plt.yticks([])
 	#plt.ylim([-1,1])
+	if (save == True):
+		plt.savefig(filename + '.png')
+	if (show == True):
+		plt.show()
+	return None
+
+
+def plotfft(IQ, centerFreq, span, sampleFreq, show = False, save = False, filename = 'fft'):
+	timeStep = 1/sampleFreq
+	iq = IQ
+	# Create window
+	window = get_window("hamming", len(iq))
+	# Normalize window
+	window *= len(window) / sum(window)
+	# Window, FFT, normalize FFT output
+	#iq_data_FFT = np.fft.fftshift(numpy.fft.fft(iq * window) / len(window))
+	iq_data_FFT = numpy.fft.fft(iq * window) / len(window)
+	#iq_data_freq = np.linspace(centerFreq-span,centerFreq+span,len(iq_data_FFT))
+	iq_data_freq = np.fft.fftfreq(iq_data_FFT.size, d=timeStep)
+	# Convert to dBm
+	#plt.plot(iq_data_freq[10:len(iq_data_freq)-10]/1000, 10 * numpy.log10(iq_data_FFT[10:len(iq_data_freq)-10].real ** 2 + iq_data_FFT.imag[10:len(iq_data_freq)-10] ** 2))
+	plt.scatter(iq_data_freq/1000, 10 * numpy.log10(iq_data_FFT.real ** 2 + iq_data_FFT.imag ** 2), s=1, c='green')
+	plt.xlabel('Fréquence [kHz]')
+	plt.ylabel('Puissance [dbm]')
+	plt.title('Spectre du signal capté autour de la porteuse')
+	plt.grid()
+	plt.minorticks_on()
+	plt.grid(which='major', linestyle='-', linewidth='0.5', color='black')
+	plt.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
 	if (save == True):
 		plt.savefig(filename + '.png')
 	if (show == True):
@@ -581,7 +615,7 @@ def rrcosFilter(data, filterWindowLength, alpha, symbolDt, sampleRate):
 def generateGraphs(centerFreq, symbolsFreqDeviations = [600, 1800, -600, -1800], level = -70,  bandWidith = 12500, \
 	symbolFrequency = 4800, nbOfSymbolsPerAcquisition = 50, nbOfAcquisitions = 20, filterWindowLength = 1000, alpha = 1,\
 	interpolation = 5, decimation = 1, fftbandWidith = 250e3, eyeDiagram = True, constellationDiagram = True, frequencyDeviationDiagram = False,\
-	fft = True, save = True, show = False):
+	fft = True, save = True, show = False, eyeName="eyeDiagram" , constName="constellationDiagram"):
 	'''
 	Generates graphics to analyse the data quality of the c4fm signal. It automaticaly calls the API to acquire the required
 	data. The reference level [dbm] is automatically set according to power calcul result. Here are other parameters
@@ -615,6 +649,10 @@ def generateGraphs(centerFreq, symbolsFreqDeviations = [600, 1800, -600, -1800],
 	interpolatedSampleRate = sampleRate * interpolation
 	interpolatedDt = 1 / interpolatedSampleRate
 
+	fftnbOfSamples = 100000
+	IQ = acquire_iq(centerFreq, bandWidith, fftnbOfSamples, level, decimation, dt)
+	plotfft(IQ, centerFreq, 250000, sampleRate, show=True, save=False)
+
 	saveNow = False
 	for i in range(nbOfAcquisitions):
 		IQ = acquire_iq(centerFreq, bandWidith, nbOfSamplesPerAcq, level, decimation, dt)
@@ -638,13 +676,13 @@ def generateGraphs(centerFreq, symbolsFreqDeviations = [600, 1800, -600, -1800],
 			= findDecisionInstant(frequencyDeviation, interpolatedDt, symbolDt, symbolsFreqDeviations)
 
 		#Diagrams
-		if ((save == True) and (i == nbOfAcquisitions-1)):
+		if ((save == True) and (i == nbOfAcquisitions - 1)):
 			saveNow = True
 		if (eyeDiagram == True):
-			plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDeviations, symbolDt, interpolatedDt,
-				False, saveNow)
+			plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDeviations, symbolDt, interpolatedDt, i,
+				False, saveNow, filename=eyeName)
 		if (constellationDiagram == True):
-			plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDeviations, False, saveNow)
+			plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDeviations, i, False, saveNow, filename=constName)
 		if (frequencyDeviationDiagram == True):
 			plotDeviationFrequency(frequencyDeviation, t_freqDevAtDecisionTime, finalFreqDeviationsAtDecisionTimes,\
 				symbolsFreqDeviations, interpolatedDt, False, saveNow)
