@@ -3,7 +3,7 @@ import time, datetime, os, ftplib
 import mysql.connector
 import numpy as np
 import matplotlib.pyplot as plt
-import comlib as cl
+#import comlib as cl
 
 
 ####DEFINE LES PATHS AU DÉBUT  + USER FRIENDLY
@@ -57,10 +57,28 @@ def ecritureHoraire(firstInit, tabHoraire, currentTime):
                 
     return tabTempsTimer
 
+def getTime():
+    
+    cmdGetTemps = "SELECT CURRENT_TIMESTAMP"
+
+    while(1) :
+        try:
+            cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+            break
+        except:
+            time.sleep(5)
+    
+    cursor = cnx.cursor()
+
+    cursor.execute(cmdGetTemps)
+    time = cursor.fetchall()
+    cnx.close()
+
+    return time[0][0]
 
 def getTableNTime():
 
-    currentTime = datetime.datetime.now()
+    currentTime = getTime()
     strCurrentTime = str(currentTime).split(".")[0] 
 
     cmdGetParam = "SELECT parametres_renir.Numero_RENIR, canaux_renir.Frequence_TX, canaux_renir.Repeteur \
@@ -134,7 +152,6 @@ def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writ
     cmdSTORFFT = "STOR " + pathVmFFT
     cmdModFFT =  "SITE CHMOD 755 " + pathVmFFT
     
-    #try catch pour la connection ici
 
     while(1) :
         try:
@@ -270,11 +287,28 @@ def readDataBase(strCurrentTime, site):
     return tabWrite
 
 
-#####Autre
-#Gestion de l'heure sur le PC 
-#Commentaire et documentation
+def deleteHoraire(strCurrentTime):
+    cmdDelHoraire = "DELETE FROM horaire_mesures WHERE Timestamp < '" + strCurrentTime.split(" ")[0]  + "'"
+
+    while(1) :
+        try:
+            cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+            break
+        except:
+            time.sleep(5)
+
+    cursor = cnx.cursor()
+
+    try :
+        cursor.execute(cmdDelHoraire)
+        cnx.commit()
+    except:
+        cnx.rollback()
+    cnx.close()
+
 
 def sendHoraire():
+
     c = "INSERT INTO horaire_mesures (Numero_systeme, Timestamp) VALUES (1, '2019-11-27 21:12:00')" #, (1, '2019-11-25 22:45:00')"
     cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
     cursor = cnx.cursor()
@@ -287,7 +321,6 @@ def sendHoraire():
     cnx.close()
     
 
-#Code pour les return value a ajouter
 def mainEvent(firstInit):
 
     pathVm = "/var/www/html/pictures/"
@@ -300,6 +333,9 @@ def mainEvent(firstInit):
         if type(tabParam) == list :
             ret = 0
 
+    if firstInit :
+        deleteHoraire(strCurrentTime)
+    
     timers = []
     if tabHoraire :
         timers = ecritureHoraire(firstInit, tabHoraire, currentTime)
@@ -328,7 +364,7 @@ def mainEvent(firstInit):
 
     print("My work is done")
 
-def testyTest(a):
+def testMesure(wTimer):
     currentTime = datetime.datetime.now()
     strCurrentTime = str(currentTime).split(".")[0]
     desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
@@ -336,9 +372,9 @@ def testyTest(a):
     site = 107
     centerFreq = 142.185 * 10 ** 6
 
-    if a :
+    if wTimer :
         print("startTimer")
-        b = Timer(90, testyTest, [False])
+        b = Timer(90, testMesure, [False])
         b.start()
 
     getSignalData(centerFreq,site,strCurrentTime, pathPanda)
@@ -347,13 +383,6 @@ def testyTest(a):
     getSignalData(centerFreq,site,strCurrentTime, pathPanda)
 
 
-
-
-
-
-
-#testyTest(False)
-#sendHoraire() 
 mainEvent(True)
 
 
