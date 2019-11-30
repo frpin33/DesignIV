@@ -3,10 +3,10 @@ import time, datetime, os, ftplib
 import mysql.connector
 import numpy as np
 import matplotlib.pyplot as plt
-#import comlib as cl
+import comlib as cl
 
 
-####DEFINE LES PATHS AU DÉBUT  + USER FRIENDLY
+####Commentaire et documentation
 
 def ecritureHoraire(firstInit, tabHoraire, currentTime):
 
@@ -348,7 +348,6 @@ def mainEvent(firstInit):
         print("Analysing a frequency")
         site = int(obj[0])
         centerFreq = obj[1] * 10**6
-        print(centerFreq)
         repeteur = int(obj[2])
         puissance = getSignalData(centerFreq, site, strCurrentTime, pathPanda)
 
