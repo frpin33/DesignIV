@@ -30,8 +30,8 @@ def ecritureHoraire(firstInit, tabHoraire, currentTime):
             tmpHoraireSec = t_heureSec + t_minSec +  int(obj[1].strftime("%S"))
 
             tps = tmpHoraireSec - tpsCurrentSec
-            #if tps > 0 ou tps < 24h 
-            tabTempsTimer.append(tps)
+            if tps > 0 : #ou tps < 24h 
+                tabTempsTimer.append(tps)
 
     else : 
         f = open(strFile, 'r')
@@ -52,8 +52,8 @@ def ecritureHoraire(firstInit, tabHoraire, currentTime):
                 tmpHoraireSec = t_heureSec + t_minSec +  int(obj[1].strftime("%S"))
                 tps = tmpHoraireSec - tpsCurrentSec
 
-                #if tps > 0 
-                tabTempsTimer.append(tps)
+                if tps > 0 : 
+                    tabTempsTimer.append(tps)
                 
     return tabTempsTimer
 
@@ -135,7 +135,7 @@ def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writ
     cmdModFFT =  "SITE CHMOD 755 " + pathVmFFT
     
     #try catch pour la connection ici
-   
+
     while(1) :
         try:
             session = ftplib.FTP('51.79.55.231','ulaval','Equipe9!')
@@ -170,7 +170,6 @@ def readPictureFTP(strCurrentTime, site, pathVm) :
     pathVmEye= pathVm + str(site) + "_eye_" + strCurrentTime + ".png"
     pathVmConst = pathVm + str(site) + "_const_" + strCurrentTime + ".png"
     pathVmFFT = pathVm + str(site) + "_fft_" + strCurrentTime + ".png"
-    
     while(1) :
         try:
             session = ftplib.FTP('51.79.55.231','ulaval','Equipe9!')
@@ -197,13 +196,13 @@ def writeDataBase(strCurrentTime, site, puissance, repeteur, writePic=True, writ
     nameSite = "Proto A"
     nameEye = str(site) + "_eye_" + strCurrentTime + ".png"
     nameConst = str(site) + "_const_" + strCurrentTime + ".png"
-    nameEmpty = "empty.png"
+    nameFFT = str(site) + "_fft_" + strCurrentTime + ".png"
     numSys = 1
 
     cmdWritePicture = "INSERT INTO picture_data\
  (monitoringSite, site, date, filenameEye,filenameConst, filenameOther)\
  VALUES('%s','%i','%s','%s','%s','%s')\
- " %(nameSite,int(site),strCurrentTime,nameEye,nameConst,nameEmpty)
+ " %(nameSite,int(site),strCurrentTime,nameEye,nameConst,nameFFT)
 
     cmdWritePuissance = "INSERT INTO surveillance_sites\
  (Numero_systeme, Numero_RENIR, Repeteur, Timestamp, RSSI_dBm)\
@@ -335,7 +334,7 @@ def testyTest(a):
     desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
     pathPanda = desktop + "\\LattePanda\\" 
     site = 107
-    centerFreq = 140.985 * 10 ** 6
+    centerFreq = 142.185 * 10 ** 6
 
     if a :
         print("startTimer")
@@ -343,6 +342,10 @@ def testyTest(a):
         b.start()
 
     getSignalData(centerFreq,site,strCurrentTime, pathPanda)
+    site = 114
+    centerFreq = 140.985 * 10 ** 6
+    getSignalData(centerFreq,site,strCurrentTime, pathPanda)
+
 
 
 
@@ -351,7 +354,7 @@ def testyTest(a):
 
 #testyTest(False)
 #sendHoraire() 
-mainEvent(False)
+mainEvent(True)
 
 
 

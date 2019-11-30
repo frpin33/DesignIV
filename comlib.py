@@ -548,6 +548,7 @@ def plotfft(centerFreq, level, nbOfFrames, bandWidith, filename):
 		dbmValues.append(value)
 
 	frequences = np.linspace(centerFreq - bandWidith, centerFreq + bandWidith, sweep_width)
+	plt.clf()
 	plt.plot(frequences/10**6, dbmValues)
 	plt.title('Spectre autour de la porteuse')
 	plt.xlabel("fréquence [MHz]")
