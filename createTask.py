@@ -8,7 +8,7 @@ cmdGetHeure = "SELECT CURRENT_TIME"
 
 while(1) :
      try:
-          cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
+          cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic', connection_timeout=40)
           break
      except:
           time.sleep(10)

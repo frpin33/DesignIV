@@ -288,7 +288,7 @@ def readDataBase(strCurrentTime, site):
 
 
 def deleteHoraire(strCurrentTime):
-    cmdDelHoraire = "DELETE FROM horaire_mesures WHERE Timestamp < '" + strCurrentTime.split(" ")[0]  + "'"
+    cmdDelHoraire = "DELETE FROM horaire_mesures WHERE Timestamp <= '" + strCurrentTime.split(" ")[0]  + "'"
 
     while(1) :
         try:
@@ -333,8 +333,7 @@ def mainEvent(firstInit):
         if type(tabParam) == list :
             ret = 0
 
-    if firstInit :
-        deleteHoraire(strCurrentTime)
+    deleteHoraire(strCurrentTime)
     
     timers = []
     if tabHoraire :
