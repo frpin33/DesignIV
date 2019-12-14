@@ -1,7 +1,7 @@
 # Système de surveillance des sites radio
 
 Un projet réalisé pour le cours Design IV -- GEL-3021 pendant la session d'automne 2019 
-L'équipe est composé de étudiants de l'université Laval en Génie Électrique et en Génie Information
+L'équipe est composé de étudiants de l'université Laval en Génie Électrique et en Génie Informatique.
 Les membres de l'équipe : **Edouard Beaulé - Sébastien Buron - Étienne Cyr - Jean-Michel Grenier - Frédérick Pineault**
 
 Afin de limiter des déplacements vers les différents sites isolés permettant une radiocommunication sur l’ensemble du Québec, le Centre de Services Partagés aimerait bonifier les équipements de surveillance du réseau RENIR en équipant certains sites d’un système de surveillance supplémentaire qui vérifiera l’état des canaux de communication et produira une analyse journalière.
