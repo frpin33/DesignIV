@@ -1,3 +1,14 @@
+'''
+Le fichier gestionPC est un module qui permet l'écriture et la lecture de la base de donnée
+Il interagit avec le module comlib pour obtenir l'information demandé par l'utilisateur
+Le but principal de ce module est :
+    Déterminer, avec la base de donnée, les sites (fréquences) à observer
+    Gérer un horaire de lecture/analyse 
+    Produire une analyse de qualité (oeil, constellation, fft) et une mesure de puissance pour chaque site listé
+    Enregistrer l'analyse sur la base de donnée
+    Garantir le succès de l'enregistrement
+'''
+
 from threading import Timer
 import time, datetime, os, ftplib
 import mysql.connector
@@ -5,20 +16,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 import comlib as cl
 
-
-####Commentaire et documentation
-
 def ecritureHoraire(firstInit, tabHoraire, currentTime):
+    '''
+    Cette fonction permet de gérer l'ajout de nouvelle plage horaire
+    Elle transforme les heures en seconde et les ajoutent dans un tableau
+    Elle écrit dans un fichier les plages programmées pour éviter de lancer la même plage plusieurs fois 
+    Le fichier est effacé à l'aide du paramètre firstInit
+    Param:
+        firstInit (bool) : Détermine si le fichier qui contient l'horaire doit être réinitialisé
+        tabHoraire (list) : Contient la liste de toutes les plages horaires
+        currentTime : L'heure de référence pour le calcul des secondes
+
+    Return:
+        tabTempsTimer (list) : Liste de plage horaire en seconde à programmer
+
+    '''
 
     heureSec = (int(currentTime.strftime("%H"))*3600) 
     minSec = (int(currentTime.strftime("%M"))*60) 
     tpsCurrentSec = heureSec + minSec + int(currentTime.strftime("%S"))
 
     tabTempsTimer = []
-       
+    
+    #Le fichier se trouve sur le bureau de l'ordinateur
     desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
     strFile = desktop + "\\Horaire.txt"
     
+    #Le contenu du fichier est effacé 
     if firstInit : 
         f = open(strFile, 'w+')
         for obj in tabHoraire:
@@ -30,9 +54,10 @@ def ecritureHoraire(firstInit, tabHoraire, currentTime):
             tmpHoraireSec = t_heureSec + t_minSec +  int(obj[1].strftime("%S"))
 
             tps = tmpHoraireSec - tpsCurrentSec
-            if tps > 0 : #ou tps < 24h 
+            if tps > 0 :  
                 tabTempsTimer.append(tps)
 
+    #Les plages horaires déjà présentent dans le fichier ne sont pas effacées
     else : 
         f = open(strFile, 'r')
         tab = []
@@ -58,9 +83,19 @@ def ecritureHoraire(firstInit, tabHoraire, currentTime):
     return tabTempsTimer
 
 def getTime():
+    '''
+    Cette fonction va chercher l'heure et la date sur la base de donnée
+
+    Param :
+        None
+
+    Return:
+        Time (datetime) : L'heure et la date
+    '''
     
     cmdGetTemps = "SELECT CURRENT_TIMESTAMP"
 
+    #On boucle pour assurer la connection
     while(1) :
         try:
             cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
@@ -77,6 +112,20 @@ def getTime():
     return time[0][0]
 
 def getTableNTime():
+    '''
+    Cette fonction récupère la date, l'heure, les sites à lire, les fréquences des sites, 
+    le numéro du répeteur et l'horaire de la journée 
+
+    Param :
+        None
+
+    Return :
+        currentTime (datetime) : L'heure et la date  
+        strCurrentTime (string) : L'heure et la date sans les millisecondes
+        tableParam (list) : Tableau contenant les sites avec leur fréquence et leur répeteur associer
+        tableHoraire (list) : Tableau contenant les plages horaires de la journée
+
+    '''
 
     currentTime = getTime()
     strCurrentTime = str(currentTime).split(".")[0] 
@@ -92,6 +141,7 @@ def getTableNTime():
     tableParam = []
     tableHoraire = []
 
+    #On boucle pour assurer la connection
     while(1) :
         try:
             cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
@@ -116,7 +166,22 @@ def getTableNTime():
     
 
 def getSignalData(centerFreq, site, strCurrentTime, pathPanda, show=False, save=True):
+    '''
+    Cette fonction appel le module comlib pour obtenir la puissance ainsi que les 3 graphiques (oeil, constellation, fft)
 
+    Param :
+        centerFreq : Fréquence central du site à mesurer (Hz)
+        site : Numéro du site à mesurer
+        strCurrentTime (string) : L'heure et la date sans les millisecondes
+        pathPanda (string) : Chemin d'enregistrement, sur l'ordinateur, vers le dossier qui contient les graphiques
+        show (bool) : Détermine si on affiche les graphiques
+        save (bool) : Détermine si on enregistre les graphiques
+
+    Return : 
+        power :  Puissance maximale mesurée (dBm)
+    '''
+
+    #Chemin pour enregistrer les photos sur le même fichier à chaque itération (Aucune sauvegarde sur l'ordinateur)
     #pathEye = pathPanda + str(site) + "_eye_current"
     #pathConst = pathPanda + str(site) + "_const_current" 
     #pathFFT = pathPanda + str(site) + "_fft_current"
@@ -131,8 +196,24 @@ def getSignalData(centerFreq, site, strCurrentTime, pathPanda, show=False, save=
     
     return power
     
-def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writeConst=True, writeFFT=True):    
+def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writeConst=True, writeFFT=True):
+    '''
+    Cette fonction permet d'écrire les différentes photos des graphiques générés sur la base de donnée
+
+    Param :
+        strCurrentTime (string) : L'heure et la date sans les millisecondes
+        site : Numéro du site à mesurer
+        pathVm (string) : Chemin d'enregistrement, sur la base de donnée, vers le dossier qui contient les graphiques
+        pathPanda (string) : Chemin d'enregistrement, sur l'ordinateur, vers le dossier qui contient les graphiques
+        writeEye (bool) : Détermine si on écrit le diagramme de l'oeil  
+        writeConst (bool) : Détermine si on écrit le diagramme de la constellation 
+        writeFFT (bool) : Détermine si on écrit le diagramme de la FFT
+
+    Return : 
+        power :  Puissance maximale mesurée (dBm)
+    ''' 
     
+    #Chemin pour enregistrer les photos sur le même fichier à chaque itération (Aucune sauvegarde sur l'ordinateur)
     #pathPandaEye = pathPanda + str(site) + "_eye_current.png"
     #pathPandaConst = pathPanda + str(site) + "_const_current.png" 
     #pathFFT = pathPanda + str(site) + "_fft_current.png"
@@ -152,7 +233,7 @@ def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writ
     cmdSTORFFT = "STOR " + pathVmFFT
     cmdModFFT =  "SITE CHMOD 755 " + pathVmFFT
     
-
+    #On boucle pour assurer la connection
     while(1) :
         try:
             session = ftplib.FTP('51.79.55.231','ulaval','Equipe9!')
@@ -183,10 +264,23 @@ def writePictureFTP(strCurrentTime, site, pathVm, pathPanda, writeEye=True, writ
 
 
 def readPictureFTP(strCurrentTime, site, pathVm) :
+    '''
+    Cette fonction permet de lire la base de donnée pour déterminer si les photos ont été écrites
+
+    Param :
+        strCurrentTime (string) : L'heure et la date sans les millisecondes
+        site : Numéro du site à mesurer
+        pathVm (string) : Chemin d'enregistrement, sur la base de donnée, vers le dossier qui contient les graphiques
+
+    Return :  
+        tabWrite (list) : Tableau contenant le statut d'écriture des photos. Le status est représenté par un booléen
+    '''
 
     pathVmEye= pathVm + str(site) + "_eye_" + strCurrentTime + ".png"
     pathVmConst = pathVm + str(site) + "_const_" + strCurrentTime + ".png"
     pathVmFFT = pathVm + str(site) + "_fft_" + strCurrentTime + ".png"
+    
+    #On boucle pour assurer la connection
     while(1) :
         try:
             session = ftplib.FTP('51.79.55.231','ulaval','Equipe9!')
@@ -209,6 +303,21 @@ def readPictureFTP(strCurrentTime, site, pathVm) :
 
 
 def writeDataBase(strCurrentTime, site, puissance, repeteur, writePic=True, writePower=True):
+    '''
+    Cette fonction écrit sur la base de donnée des lignes d'informations pour l'affichage dans le UI
+
+    Param :
+        strCurrentTime (string) : L'heure et la date sans les millisecondes
+        site : Numéro du site à mesurer
+        puissance : Puissance maximale mesurée (dBm)
+        repeteur : Numéro du répeteur
+        writePic (bool) : Détermine si on écrit les informations sur les photos
+        writePower (bool) : Détermine si on écrit la puissance
+
+    Return : 
+        None
+
+    '''
 
     nameSite = "Proto A"
     nameEye = str(site) + "_eye_" + strCurrentTime + ".png"
@@ -226,6 +335,7 @@ def writeDataBase(strCurrentTime, site, puissance, repeteur, writePic=True, writ
  VALUES('%i','%i','%i','%s','%f')\
  " %(numSys, int(site), int(repeteur), strCurrentTime, float(puissance))
 
+    #On boucle pour assurer la connection
     while(1) :
         try:
             cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
@@ -253,12 +363,23 @@ def writeDataBase(strCurrentTime, site, puissance, repeteur, writePic=True, writ
     cnx.close()
 
 def readDataBase(strCurrentTime, site):
+    '''
+    Cette fonction permet la lecture de la base de donnée pour vérifier le succès des écritures
+
+    Param :
+        strCurrentTime (string) : L'heure et la date sans les millisecondes
+        site : Numéro du site à mesurer
+
+    Return : 
+        tabWrite (list) : Tableau contenant le statut d'écriture des différents données. Le status est représenté par un booléen
+    '''
 
     cmdSuccesPicture = "SELECT * FROM picture_data WHERE date='" + strCurrentTime + "' and site=" + str(site)
     cmdSuccesPuissance = "SELECT * FROM surveillance_sites WHERE Timestamp='" + strCurrentTime + "' and Numero_RENIR=" + str(site)
     picSucces = [] 
     powerSucces = []
 
+    #On boucle pour assurer la connection
     while(1) :
         try:
             cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
@@ -288,8 +409,18 @@ def readDataBase(strCurrentTime, site):
 
 
 def deleteHoraire(strCurrentTime):
+    '''
+    Cette fonction permet de retirer des anciennes plages horaires de la base de donnée
+
+    Param :
+        strCurrentTime (string) : L'heure et la date sans les millisecondes
+
+    Return :
+        None
+    '''
     cmdDelHoraire = "DELETE FROM horaire_mesures WHERE Timestamp <= '" + strCurrentTime.split(" ")[0]  + "'"
 
+    #On boucle pour assurer la connection
     while(1) :
         try:
             cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
@@ -308,6 +439,10 @@ def deleteHoraire(strCurrentTime):
 
 
 def sendHoraire():
+    '''
+    Non utilisé dans le code principal
+    Cette fonction permet d'écrire des plages horaires sur la base de donnée
+    '''
 
     c = "INSERT INTO horaire_mesures (Numero_systeme, Timestamp) VALUES (1, '2019-11-27 21:12:00')" #, (1, '2019-11-25 22:45:00')"
     cnx = mysql.connector.connect(user='fred', password='Equipe9!',host='51.79.55.231',database='clic')
@@ -322,8 +457,22 @@ def sendHoraire():
     
 
 def mainEvent(firstInit):
+    '''
+    Cette fonction appelle toutes les fonctions nécessaire pour réaliser les différentes tâches
+    Elle s'assure que le travail à faire est complété avec succès
+    Elle s'occupe de lancer des timers pour couvrir les plages horaires demandées
 
+    Param:
+        firstInit (bool) : Détermine si le fichier qui contient l'horaire doit être réinitialisé
+
+    Return:
+        None
+    '''
+
+    #Chemin sur la base de donnée que le UI utilise pour afficher les photos
     pathVm = "/var/www/html/pictures/"
+    
+    #Le dossier d'enregistrement des photos est sur le bureau 
     desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
     pathPanda = desktop + "\\LattePanda\\" 
 
@@ -363,6 +512,11 @@ def mainEvent(firstInit):
     print("My work is done")
 
 def testMesure(wTimer):
+    '''
+    Non utilisé dans le code principal
+    Cette fonction permet de tester la fonction d'analyse de signal
+    wTimer permet d'ajouter une analyse 90 secondes après le lancement de la fonction
+    '''
     currentTime = datetime.datetime.now()
     strCurrentTime = str(currentTime).split(".")[0]
     desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
@@ -382,10 +536,3 @@ def testMesure(wTimer):
 
 
 mainEvent(True)
-
-
-
-
-
-
-

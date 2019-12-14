@@ -1,7 +1,6 @@
 '''
-This module is a librairie for C4FM communication analysis
-it contains various functions that have been tested by comparing
-the results with matlab functions.
+Ce module est une librairie pour faire de l'analyse de communication C4FM
+Il contient plusieurs fonction testées et comparées avec les fonctions Matlab
 '''
 
 import numpy as np
@@ -23,13 +22,13 @@ pi = np.pi
 
 def hamming(N):
 	''' 
-		Creates a Hamming window for a filter (Matlab like)
-		
-		Parameters:
-		N (int) : Number of points of the window
-		
-		Returns:
-		numpy.array : The window as a numpy array
+	Crée une fenêtre de Hamming pour un filtre (simmilaire à Matlab)
+	
+	Param:
+		N (int) : Nombre de points dans la fenêtre
+	
+	Return:
+		numpy.array : La fenêtre dans un numpy array
 	'''
 	n = np.linspace(0, N-1, N)
 	window = 0.54-0.46*np.cos((2*pi*n)/(N-1))
@@ -38,16 +37,16 @@ def hamming(N):
 
 def lowPassFilter(data, window, fc, fs):
 	''' 
-		Low pass filters the data with the specified window
-		
-		Parameters:
-		data (numpy.array) : Data to be filtered
-		window (numpy.array) : Window to be used for the fitler. The length must be odd.
-		fc (int) : Cutoff frequency [Hz]
-		fs (int) : Sampling frequency [Hz]
-		
-		Returns:
-		numpy.array : The filtered data in a numpy array
+	Filtre, avec un passe bas, les données selon la fenêtre spécifiée
+	
+	Param:
+		data (numpy.array) : Données à filtrer
+		window (numpy.array) : Fenêtre à utiliser pour le filtre. La taille doit etre impair.
+		fc (int) : Fréquence de coupure [Hz]
+		fs (int) : Fréquence d'échantillonnage [Hz]
+	
+	Return:
+		numpy.array : Les données filtrées dans un numpy array
 	'''
 	wc = 2 * pi * fc / fs                   #Numeric cutoff frequency
 	N = len(window)                         #Window length
@@ -60,16 +59,16 @@ def lowPassFilter(data, window, fc, fs):
 
 def highPassFilter(data, window, fc, fs):
 	''' 
-		High pass filters the data with the specified window
-		
-		Parameters:
-		data (numpy.array) : Data to be filtered
-		window (numpy.array) : Window to be used for the fitler. The length must be odd
-		fc (int) : Cutoff frequency [Hz]
-		fs (int) : Sampling frequency [Hz]
-		
-		Returns:
-		numpy.array : The filtered data
+	Filtre, avec un passe haut, les données selon la fenêtre spécifiée
+	
+	Param:
+		data (numpy.array) : Données à filtrer
+		window (numpy.array) : Fenêtre à utiliser pour le filtre. La taille doit etre impair.
+		fc (int) : Fréquence de coupure [Hz]
+		fs (int) : Fréquence d'échantillonnage [Hz]
+	
+	Return:
+		numpy.array : Les données filtrées dans un numpy array
 	'''
 	wc = 2 * pi * fc / fs                   #Numeric cutoff frequency
 	N = len(window)                         #Window length
@@ -83,17 +82,16 @@ def highPassFilter(data, window, fc, fs):
 
 def bandPassFilter(data, window, fcb, fch, fs):
 	''' 
-		Band pass filters the data with the specified window
-		
-		Parameters:
-		data (numpy.array) : Data to be filtered
-		window (numpy.array) : Window to be used for the fitler. The length must be odd
-		fcb : Down cutoff frequency [HZ]
-		fch : Up cutoff frequency   [HZ]
-		fs : Sampling frequency     [Hz]
-		
-		Returns :
-		numpy.array : The filtered data
+	Filtre, avec un passe bande, les données selon la fenêtre spécifiée
+	
+	Param:
+		data (numpy.array) : Données à filtrer
+		window (numpy.array) : Fenêtre à utiliser pour le filtre. La taille doit etre impair.
+		fc (int) : Fréquence de coupure [Hz]
+		fs (int) : Fréquence d'échantillonnage [Hz]
+	
+	Return:
+		numpy.array : Les données filtrées dans un numpy array
 	'''   
 	wcb = 2 * pi * fcb / fs
 	wch = 2 * pi * fch / fs
@@ -110,27 +108,27 @@ def bandPassFilter(data, window, fcb, fch, fs):
 
 def derivate(data,dt):
 	'''
-	Computes the derivative of a dataset, uses a numpy gradient function for that.
+	Calcul la derivée des données, utilise la fonction numpy gradient.
 	
-	Parameters:
-	data (numpy.array) : Data to be derivated
-	dt : Time step between data samples
+	Param:
+		data (numpy.array) : Données à dériver
+		dt : Échelle de temps entre les échantillons de données
 	
-	Returns:
-	numpy.array : The derivated data
+	Return:
+		numpy.array : Les données dérivées
 	'''
 	return np.gradient(data,dt)
 
 def convertToPolar(X,Y):
 	'''
-	Converts the vectors from normal representation to polar representation (norm and phase)
+	Convertis le vecteur de coordonnées cartésiennes vers des coordonnées polaires
 	
-	Parameters:
-	X (numpy.array): Real value of the vectors
-	Y (numpy.array): Imaginairy value of the vectors
+	Param:
+		X (numpy.array): Partie réel du vecteur
+		Y (numpy.array): Partie imaginaire du vecteur
 	
 	Returns:
-	numpy.array, numpy.array : Norm, phase of every vectors
+		numpy.array, numpy.array : coordonnée radiale, coordonnée angulaire du vecteur
 	'''
 	norm = np.sqrt(X**2+Y**2)
 	phase = np.arctan2(Y,X)
@@ -138,16 +136,17 @@ def convertToPolar(X,Y):
 
 def filteredInterpolation(data, factor = 10):
 	'''
-	Interpolates data with a certain interpolation factor. Appy automatically a interpolation
-	filter on the upsampled data. The interpolation filter is two hamming filters with wc=pi/factor in series.
-	A little data is cropped to ensure that we do not see filters transient.
+	Interpole les données selon un facteur d'interpolation.
+	Applique automatiquement un filtre d'interpolation sur les données sur-échantillonnées
+	Le filtre est composé de deux filtres de hamming avec wc=pi/factor en série.
+	Une petite portion des données est coupée pour enlever les effets transitoires des filtres
 
-	Parameters:
-	data (numpy.array) : Data to be interpolated
-	factor : Interpolation factor. Default is 10
+	Param:
+		data (numpy.array) : Données à interpoler
+		factor : Facteur d'interpolation. 10 par défaut
 
-	Returns:
-	numpy.array : Interpolated data
+	Return:
+		numpy.array : Données interpolées
 	'''
 	data = commpy.utilities.upsample(data, factor)
 	data = 0.25*factor/10*lowPassFilter(data, np.convolve(hamming(100), hamming(100)), 1/(2*factor), 1)
@@ -156,18 +155,18 @@ def filteredInterpolation(data, factor = 10):
 
 def underSample(data, L, N, fs):
 	'''
-	Undersamples the data with the specified factor. Applies a decimation filter before
-	undersampling.
+	Sous-échantillonne les données selon un facteur.
+	Applique un filtre de décimation avec le sous-échantillonnage
 	
-	Parameters:
-	data (numpy.array): data to be undersampled
-	L : undersampling factor
-	N : Lenght of hamming window for decimation filter. If this
-	    value is 0, no filter is applied.
-	fs : Saampling frequency [Hz]
+	Param:
+		data (numpy.array): Donnée à sous-échantillonner
+		L : Facteur de sous-échantillonnage
+		N : Taille de la fenêtre de Hamming pour le filtre de décimation. If this
+			Si la valeur est de 0, aucun filtre est appliqué.
+		fs : Fréquence d'échantillonnage [Hz]
 	
-	Returns:
-	numpy.array : The undersampled data
+	Return:
+		numpy.array : Les données sous-échantillonées
 	'''
 	if (N != 0):
 		wc = np.pi / L
@@ -183,15 +182,15 @@ def underSample(data, L, N, fs):
 
 def cumulatePhase(phase):
 	'''
-	Cumulate the phase along a vector. Sometimes the phase of the IQ vector passes from pi to -pi.
-	It does not allow us to derivte the signal properly. This function cumulates the phase to avoid
-	this problem.
+	Cumule la phase au long d'un vecteur.
+	La phase passe parfois de pi à -pi dans un vecteur IQ se qui peut nuir à la dérivé
+	Cette fonction permet d'éviter ce problème
 	
-	Paramters:
-	phase (numpy.array) : phase vector to be cumulated
-	
-	Returns:
-	numpy.array : Vector containing the cumulated phase.
+	Param:
+		phase (numpy.array) : Vecteur de phase à cumuler
+
+	Return:
+		numpy.array : Vecteur avec la phase cumulé
 	'''
 	
 	#Looking for passages from pi to -pi or from -pi to pi
@@ -227,21 +226,21 @@ def cumulatePhase(phase):
 
 def findDecisionInstant(frequencyDeviation, dt, symbolDt, symbolsFreqDeviations, maxNumOfDecisions = 0):
 	'''
-	Finds C4FM optimal decision instants.
+	Trouve la décision C4FM optimale instantannée
 	
-	Paramters:
-	frequencyDeviation (numpy.array) : Frequency deviation (comparing to carrier) in function of time
-	dt : Time between samples =  1/sampleTime
-	symbolDt : Time between sent symbols ex:1/4800 for 4800 symbols per seconds
-	symbolsFreqDeviations (list) : List containing the four frequency deviations of symbols ex:[600,1800,-600,-1800]
+	Param:
+		frequencyDeviation (numpy.array) : Fréquence de déviation selon le temps
+		dt : Temps entre les échantillons  =  1/sampleTime
+		symbolDt : Temps entre les symboles envoyés ex:1/4800 pour 4800 symboles par secondes
+		symbolsFreqDeviations (list) : Liste qui contient les 4 fréquences de déviation des symboles ex:[600,1800,-600,-1800]
 	
 	Returns:
-	numpy.array, numpy.array, numpy.array : 1, 2, 3
-	1: Vector containing index of decision times
-	2 :Vector containing decision times
-	3 :Vector containing deviation frequencys at decision times
-	
-	[finalDecisionIndexVector, t_freqDevAtDecisionTime, finalFreqDeviationsAtDecisionTimes]
+		numpy.array, numpy.array, numpy.array : 1, 2, 3
+		1: Vecteur contenant l'index des temps de décision
+		2 :Vecteur contenant les temps de décision
+		3 :Vecteur contenant la fréquence de déviation aux temps de décision
+		
+		[finalDecisionIndexVector, t_freqDevAtDecisionTime, finalFreqDeviationsAtDecisionTimes]
 	'''
 	t_fd = dt * np.arange(0,frequencyDeviation.size)
 	lastDecisionInstant = 0
@@ -295,18 +294,18 @@ def findDecisionInstant(frequencyDeviation, dt, symbolDt, symbolsFreqDeviations,
 
 def plotIQData(I,Q,dt,show = False, save = False, filename = 'iqdata'):
 	'''
-	Show or save the IQ data sent in parameter
+	Affiche et sauvegarde les données IQ des paramètres donnés
 	
-	Paramters:
-	I (numpy.array) : I data of IQ data
-	I (numpy.array) : Q data of IQ data
-	dt : Time between samples =  1/sampleTime
-	show (bool) : Show the figure or not default is False
-	save (bool) : Save the figure (with specified filename) default is False
-	filename (String) : Filename to save the figure default is 'iqdata'
+	Param:
+		I (numpy.array) : Donnée I des données IQ
+		Q (numpy.array) : Donnée Q des données IQ
+		dt : Temps entre les échantillons =  1/sampleTime
+		show (bool) : Détermine si on affiche la figure
+		save (bool) : Détermine si on sauvegarde la figure
+		filename (String) : Nom du fichier d'enregistrement de la figure
 	
-	Returns:
-	None
+	Return:
+		None
 	'''
 	t_iq = dt*np.arange(0,I.size)
 	plt.figure(1)
@@ -326,18 +325,18 @@ def plotIQData(I,Q,dt,show = False, save = False, filename = 'iqdata'):
 
 def plotIQNormAndPhase(norm,phase,dt,show = False, save = False, filename = 'iqNormPhase'):
 	'''
-	Show or save the IQ data sent in parameter
+	Affiche et sauvegarde les données IQ des paramètres donnés
 	
-	Paramters:
-	norm (numpy.array) : norm of IQ vector along samples
-	phase (numpy.array) : phase of IQ vector along samples
-	dt : Time between samples =  1/sampleTime
-	show (bool) : Show the figure or not default is False
-	save (bool) : Save the figure (with specified filename) default is False
-	filename (String) : Filename to save the figure default is 'iqNormPhase'
+	Param:
+		norm (numpy.array) : Rayon des données IQ
+		phase (numpy.array) : Angle des données IQ
+		dt : Temps entre les échantillons =  1/sampleTime
+		show (bool) : Détermine si on affiche la figure
+		save (bool) : Détermine si on sauvegarde la figure
+		filename (String) : Nom du fichier d'enregistrement de la figure
 	
-	Returns:
-	None
+	Return:
+		None
 	'''
 	t_np = dt*np.arange(0,norm.size)
 	plt.figure(2)
@@ -362,17 +361,17 @@ def plotIQNormAndPhase(norm,phase,dt,show = False, save = False, filename = 'iqN
 
 def plotDerivativePhase(derivativePhase,dt,show = False, save = False, filename = 'iqPhaseDerivative'):
 	'''
-	Show or save the IQ data sent in parameter
+	Affiche et sauvegarde l'angle dérivée des paramètres donnés
 	
-	Paramters:
-	phaseDerivative (numpy.array) : phase derivative of IQ vector along samples
-	dt : Time between samples =  1/sampleTime
-	show (bool) : Show the figure or not default is False
-	save (bool) : Save the figure (with specified filename) default is False
-	filename (String) : Filename to save the figure default is 'iqPhaseDerivative'
+	Param:
+		derivativePhase (numpy.array) : Angle dérivé du vecteur IQ
+		dt : Temps entre les échantillons =  1/sampleTime
+		show (bool) : Détermine si on affiche la figure
+		save (bool) : Détermine si on sauvegarde la figure
+		filename (String) : Nom du fichier d'enregistrement de la figure
 	
-	Returns:
-	None
+	Return:
+		None
 	'''
 	t_pd = dt * np.arange(0,derivativePhase.size)
 	plt.figure(3)
@@ -393,20 +392,20 @@ def plotDerivativePhase(derivativePhase,dt,show = False, save = False, filename 
 
 def plotDeviationFrequency(frequencyDeviation, t_freqDevAtDecisionTime, finalFreqDeviationsAtDecisionTimes, symbolsFreqDeviations, dt, show = False, save = False, clear = False, filename = 'freqDeviation'):
 	'''
-	Show or save the deviation frequency plot.
+	Affiche et sauvegarde la déviation en fréquence des paramètres donnés
 	
-	Paramters:
-	frequencyDeviation (numpy.array) : C4FM frequency deviation in fct of time
-	t_freqDevAtDecisionTime (numpy.array) : Times of decisions
-	finalFreqDeviationsAtDecisionTimes (numpy.array) : Frequency deviations at decisions times
-	symbolsFreqDeviations (list) : List containing the four frequency deviations of symbols ex:[600,1800,-600,-1800]
-	dt : Time between samples =  1/sampleTime
-	show (bool) : Show the figure or not default is False
-	save (bool) : Save the figure (with specified filename) default is False
-	filename (String) : Filename to save the figure default is 'freqDeviation'
+	Param:
+		frequencyDeviation (numpy.array) : Déviation de la fréquence C4FM en fonction du temps
+		t_freqDevAtDecisionTime (numpy.array) : Temps de décision
+		finalFreqDeviationsAtDecisionTimes (numpy.array) : Fréquence de déviation au temps de décision
+		symbolsFreqDeviations (list) : Liste qui contient les 4 fréquences de déviation des symboles ex:[600,1800,-600,-1800]
+		dt : Temps entre les échantillons =  1/sampleTime
+		show (bool) : Détermine si on affiche la figure
+		save (bool) : Détermine si on sauvegarde la figure
+		filename (String) : Nom du fichier d'enregistrement de la figure
 	
-	Returns:
-	None
+	Return:
+		None
 	'''
 	t_fd = dt * np.arange(0,frequencyDeviation.size)
 	plt.figure(4)
@@ -432,19 +431,22 @@ def plotDeviationFrequency(frequencyDeviation, t_freqDevAtDecisionTime, finalFre
 
 def plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDeviations, symbolDt, dt, nbIteration, show = False, save = False, clear = False, filename = 'eyeDiagram', nbOfWindow = 2000):
 	'''
-	Show or save the deviation frequency plot.
+	Affiche et sauvegarde le diagramme de l'oeil des paramètres donnés
 	
-	Paramters:
-	finalFreqDeviationsAtDecisionTimes (numpy.array) : Frequency deviations at decisions times
-	finalDecisionIndexVector (numpy.array) : Index of decision moments in the frequencyDeviation array
-	symbolsFreqDeviations (list) : List containing the four frequency deviations of symbols ex:[600,1800,-600,-1800]
-	dt : Time between samples =  1/sampleTime
-	show (bool) : Show the figure or not default is False
-	save (bool) : Save the figure (with specified filename) default is False
-	filename (String) : Filename to save the figure default is 'eyeDiagram'
+	Param:
+		frequencyDeviation (numpy.array) : Déviation de la fréquence C4FM en fonction du temps
+		finalDecisionIndexVector (numpy.array) : Index des temps de décision selon la fréquence de déviation
+		symbolsFreqDeviations (list) : Liste qui contient les 4 fréquences de déviation des symboles ex:[600,1800,-600,-1800]
+		symbolDt : Temps entre les symboles envoyés ex:1/4800 pour 4800 symboles par secondes
+		dt : Temps entre les échantillons =  1/sampleTime
+		nbIteration : Numéro de l'itération en cours
+		show (bool) : Détermine si on affiche la figure
+		save (bool) : Détermine si on sauvegarde la figure
+		clear (bool) : Détermine si on vide la figure
+		filename (String) : Nom du fichier d'enregistrement de la figure
 	
-	Returns:
-	None
+	Return:
+		None
 	'''
 	t_fd = dt * np.arange(0,frequencyDeviation.size)
 	nbOfSamplePerWindow = int(2*symbolDt/dt)
@@ -479,19 +481,19 @@ def plotEyeDiagram(frequencyDeviation, finalDecisionIndexVector, symbolsFreqDevi
 
 def plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDeviations, nbIteration, show = False, save = False, clear = False, filename = 'constellationDiagram'):
 	'''
-	Show or save the deviation frequency plot.
+	Affiche et sauvegarde le diagramme de constellation des paramètres donnés
 	
-	Paramters:
-	frequencyDeviation (numpy.array) : C4FM frequency deviation in fct of time
-	finalDecisionIndexVector (numpy.array) : Index of decision moments in the frequencyDeviation array
-	symbolsFreqDeviations (list) : List containing the four frequency deviations of symbols ex:[600,1800,-600,-1800]
-	dt : Time between samples =  1/sampleTime
-	show (bool) : Show the figure or not default is False
-	save (bool) : Save the figure (with specified filename) default is False
-	filename (String) : Filename to save the figure default is 'constellationDiagram'
+	Param:
+		finalFreqDeviationsAtDecisionTimes (numpy.array) : Fréquence de déviation au temps de décision	
+		symbolsFreqDeviations (list) : Liste qui contient les 4 fréquences de déviation des symboles ex:[600,1800,-600,-1800]
+		nbIteration : Numéro de l'itération en cours
+		show (bool) : Détermine si on affiche la figure
+		save (bool) : Détermine si on sauvegarde la figure
+		clear (bool) : Détermine si on vide la figure
+		filename (String) : Nom du fichier d'enregistrement de la figure
 	
-	Returns:
-	None
+	Return:
+		None
 	'''
 	plt.figure(6)
 	if (clear == True):
@@ -520,6 +522,20 @@ def plotConstellationDiagram(finalFreqDeviationsAtDecisionTimes, symbolsFreqDevi
 
 
 def plotfft(centerFreq, level, nbOfFrames, bandWidith, filename):
+	'''
+	Calcul et enregistre la fft à l'aide du récepteur
+	
+	Param:
+		centerFreq : Fréquence centrale (Hz)
+		level : Puissance du signal attendue (dBm)
+		nbOfFrames : Nombre d'échantillons demandés
+		bandWidith : Bande passante désirée
+		filename (String) : Nom du fichier d'enregistrement de la figure
+	
+	Return:
+		None
+	'''
+	
 	handle = sa_open_device()["handle"]
 
 	sa_config_acquisition(handle, SA_MIN_MAX, SA_LIN_SCALE)
@@ -563,19 +579,19 @@ def plotfft(centerFreq, level, nbOfFrames, bandWidith, filename):
 
 def acquire_iq(centerFreq, bandwidth, nbOfSamples, level, decimation, dt):
 	'''
-	Acquires some IQ data.
+	Récolte des données IQ avec le récepteur
 
-	Parameters:
-	centerFreq : Center frequency (Hz)
-	bandwidith : Bandwidth desired (there is a prefilter made by the radio)
-	nbOfSamples : Number of samples desired
-	decimation : The sample rate will be 486111.111111111/decimation
-	dt : 1/sampleRate
-	level : Expected power of the signal [dbm]. It is the equivalent of setting the reference level on spike to maximise
-	        the precision.
+	Param:
+		centerFreq : Fréquence centrale (Hz)
+		bandwidith : Bande passante désirée
+		nbOfSamples : Nombre d'échantillons demandés
+		level : Puissance du signal attendue (dBm)
+		decimation : La fréquence d'échantillonnage sera 486111.111111111/decimation
+		dt : Temps entre les échantillons =  1/sampleTime
+	
 
-	Returns:
-	np.array of complex numbers : The IQ data. I = np.real(iq), Q = np.real(iq).
+	Return:
+		np.array des nombres complexes : Les données IQ. I = np.real(iq), Q = np.real(iq).
 	'''
 
 	#Greater number of samples because some data is cropped
@@ -609,7 +625,15 @@ def acquire_iq(centerFreq, bandwidth, nbOfSamples, level, decimation, dt):
 	return iq
 
 def readIQFile(fileName):
-	''' Reading the IQ file  '''
+	''' 
+	Lecture du fichier IQ 
+
+	Param:
+		filename (string) : nom du fichier à lire
+	
+	Return:
+		List :  Les données I et Q du fichier lu
+	'''
 
 	with open(fileName, "rb") as f:
 			#getting the data from the file...
@@ -621,6 +645,19 @@ def readIQFile(fileName):
 	return [I,Q]
 
 def rrcosFilter(data, filterWindowLength, alpha, symbolDt, sampleRate):
+	'''
+	Fitre, avec un «Root-Raised-cosine», les données en fonction de la fenêtre
+
+	Param:
+		data : Donnée à filtrer
+		filterWindowLength : Taille de la fenêtre
+		alpha : Paramètre alpha du filtre
+		symbolDt : Temps entre les symboles envoyés ex:1/4800 pour 4800 symboles par secondes
+		sampleRate : Fréquence d'échantillonnage
+
+	Return:
+		numpy.array : Les données filtrées
+	'''
 
 	[time_rrc, h_rrc] = commpy.filters.rrcosfilter(filterWindowLength, alpha, symbolDt, sampleRate)
 	data = np.convolve(data, h_rrc)
@@ -632,28 +669,35 @@ def generateGraphs(centerFreq, symbolsFreqDeviations = [600, 1800, -600, -1800],
 	interpolation = 5, decimation = 1, fftbandWidith = 250e3, eyeDiagram = True, constellationDiagram = True, frequencyDeviationDiagram = False,\
 	fft = True, save = True, show = False, eyeName="eyeDiagram" , constName="constellationDiagram"):
 	'''
-	Generates graphics to analyse the data quality of the c4fm signal. It automaticaly calls the API to acquire the required
-	data. The reference level [dbm] is automatically set according to power calcul result. Here are other parameters
-	you can play with:
+	Génère les graphiques pour l'analyse de qualité des données du signal C4FM.
+	Cette fonction permet la communication avec le récepteur.
+	Le niveau (level) de référence en dBm est automatiquement configuré en fonction de la puissance mesurer
 
-	:param level: Expected power of the signal [dbm]
-	:param centerFreq: Center frequency of the signal [Hz]
-	:param bandWidith: BandWidith of the signal [Hz]
-	:param symbolFrequency: Frequency of the symbols ex:4800 symbols/sec
-	:param decimation: Decimation factor sent to the radio. Just use 1 so the sampling frequency is at its maximum.
-	:param nbOfSymbolsPerAcquisition: Nb of samples recorded for every acquisitions made by the radio.
-	:param nbOfAcquisitions: Nb of different acquisitions made by the radio.
-	:param filterWindowLength: Length of the window used for the rrcos filter.
-	:param alpha: Alpha parameter for the rrcos filter.
-	:param interpolation: Interpolation factor so we have a better resolution.
-	:param symbolsFreqDeviations: This is a list containing expected frequency deviations for every 4 symbols.
-	:param eyeDiagram: Do we compute the eye diagram or not. Boolean.
-	:param constellationDiagram: Do we compute the constellation diagram or not. Boolean.
-	:param frequencyDeviation: Do we compute the frequency deviation  diagram or not. Boolean.
-	:param fft: Do we compute the fft diagram or not. Boolean.
-	:param save: Do we save the desired diagram as png images or not. Boolean
-	:param show: Do we show the desired diagrams or not. Boolean.
-	:return:
+
+	Param:
+		centerFreq : Fréquence centrale (Hz)
+		symbolsFreqDeviations : Liste qui contient les 4 fréquences de déviation des symboles ex:[600,1800,-600,-1800]
+		level  : Puissance du signal attendue (dBm)
+		bandWidith : Bande passante désirée
+		symbolFrequency : Fréquence des symboles
+		nbOfSymbolsPerAcquisition = Nombre de symbole enregistré pour chaque itération de mesure
+		nbOfAcquisitions  : Nom de mesure réalisée
+		filterWindowLength : Taille de la fenêtre du filtre
+		alpha : Paramètre alpha pour le filtre RRCosine
+		interpolation : Facteur d'interpolation
+		decimation : La fréquence d'échantillonnage sera 486111.111111111/decimation
+		fftbandWidith : Bande passante de la fft
+		eyeDiagram (Bool) : Détermine si on génère le diagramme de l'oeil
+		constellationDiagram (Bool) : Détermine si on génère le diagramme de la constellation
+		frequencyDeviationDiagram (Bool) : Détermine si on génère le diagramme de déviation de fréquence
+		fft (Bool) : Détermine si on génère le diagramme de la fft
+		save (Bool) : Détermine si on sauvegarde les différents graphiques générés
+		show (Bool) : Détermine si on affiches les différents graphiques générés
+		eyeName: Nom du fichier d'enregistrement du diagramme de l'oeil 
+		constName: Nom du fichier d'enregistrement du diagramme de la constellation 
+
+	Return:
+		None
 	'''
 
 	#Basic computings on the data
@@ -708,6 +752,35 @@ def realTimeGraphs(centerFreq, symbolsFreqDeviations = [600, 1800, -600, -1800],
 	interpolation = 1, decimation = 1, fftbandWidith = 250e3, eyeDiagram = True, constellationDiagram = True, frequencyDeviationDiagram = False,\
 	fft = True):
 
+	'''
+	Génère les graphiques en fonction d'une analyse temps réel
+
+	Param:
+		centerFreq : Fréquence centrale (Hz)
+		symbolsFreqDeviations : Liste qui contient les 4 fréquences de déviation des symboles ex:[600,1800,-600,-1800]
+		level  : Puissance du signal attendue (dBm)
+		bandWidith : Bande passante désirée
+		symbolFrequency : Fréquence des symboles
+		nbOfSymbolsPerAcquisition = Nombre de symbole enregistré pour chaque itération de mesure
+		filterWindowLength : Taille de la fenêtre du filtre
+		alpha : Paramètre alpha pour le filtre RRCosine
+		interpolation : Facteur d'interpolation
+		decimation : La fréquence d'échantillonnage sera 486111.111111111/decimation
+		fftbandWidith : Bande passante de la fft
+		eyeDiagram (Bool) : Détermine si on génère le diagramme de l'oeil
+		constellationDiagram (Bool) : Détermine si on génère le diagramme de la constellation
+		frequencyDeviationDiagram (Bool) : Détermine si on génère le diagramme de déviation de fréquence
+		fft (Bool) : Détermine si on génère le diagramme de la fft
+		save (Bool) : Détermine si on sauvegarde les différents graphiques générés
+		show (Bool) : Détermine si on affiches les différents graphiques générés
+		eyeName: Nom du fichier d'enregistrement du diagramme de l'oeil 
+		constName: Nom du fichier d'enregistrement du diagramme de la constellation 
+
+	Return:
+		None
+
+	'''
+
 	# Basic computings on the data
 	sampleRate = 486111.111111111 / decimation
 	symbolDt = 1 / symbolFrequency
@@ -753,11 +826,23 @@ def realTimeGraphs(centerFreq, symbolsFreqDeviations = [600, 1800, -600, -1800],
 
 	return 1
 
-def findSymbols(level, centerFrequency, symbolFrequency, decimation, nbOfSymbols):
-	#TODO
-	return 1
 
 def computeRFpower(centerFreq, level, nbOfFrames, bandWidith):
+
+	'''
+	Calcul de la puissance mesurée avec le récepteur
+
+	Param:
+		centerFreq : Fréquence centrale (Hz)
+		level : Puissance du signal attendue (dBm)
+		nbOfFrames : Nombre d'échantillons demandés
+		bandWidith : Bande passante désirée
+	
+
+	Return:
+		rssi_dBm : Puissance maximale mesurée (dBm)
+	'''
+
 	handle = sa_open_device()["handle"]
 
 	sa_config_acquisition(handle, SA_MIN_MAX, SA_LIN_SCALE)

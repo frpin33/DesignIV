@@ -6,9 +6,9 @@
 from ctypes import *
 import numpy
 
-#Changer pour le bon path
-#salib = CDLL("C:\\Users\\Frederick\\Desktop\\DesignIV\\sadevice\\sa_api.dll")
-salib = CDLL("sadevice/sa_api.dll")
+#Chemin vers sa_api.dll
+salib = CDLL("C:\\Users\\LattePanda\\Desktop\\DesignIV\\sadevice\\sa_api.dll")
+#salib = CDLL("sadevice/sa_api.dll")
 
 
 # ---------------------------------- Defines -----------------------------------
