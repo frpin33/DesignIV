@@ -1,6 +1,6 @@
 # Système de surveillance des sites radio
 
-Un projet réalisé pour le cours Design IV -- GEL-3021 pendant la session d'automne 2019 
+Un projet réalisé pour le cours Design IV -- GEL-3021 pendant la session d'automne 2019. 
 L'équipe est composé de étudiants de l'université Laval en Génie Électrique et en Génie Informatique.
 Les membres de l'équipe : **Edouard Beaulé - Sébastien Buron - Étienne Cyr - Jean-Michel Grenier - Frédérick Pineault**
 
@@ -10,7 +10,7 @@ Afin de limiter des déplacements vers les différents sites isolés permettant 
 
 Le contenu de ce répertoire se divise en deux sections principales. 
 
-La première section est le code nécessaire pour le fonctionnement de l'ordinateur présent sur le site. Le code est écrit en Python et il est regroupé dans les trois fichiers suivant : **comlib**,**createTask** et **gestionPC**. Chaque fichier contient des commentaires et de la documentation vis-à-vis le rôle de chacune des fonctions écritent. 
+La première section est le code nécessaire pour le fonctionnement de l'ordinateur présent sur le site. Le code est écrit en Python et il est regroupé dans les trois fichiers suivant : **comlib**, **createTask** et **gestionPC**. La communication et le fonctionnement du récepteur Signal Hound est possible grâce à l'API fournit par la compagnie. L'API se trouve dans le dossier **sadevice**. Chaque fichier écrit par l'équipe contient des commentaires et de la documentation vis-à-vis le rôle de chacune des fonctions écritent. 
 
 La deuxième section est le code nécessaire pour le fonctionnement de l'interface utilisateur. Le code est écrit en JavaScript et en PHP.
 
